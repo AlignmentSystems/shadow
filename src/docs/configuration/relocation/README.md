@@ -26,13 +26,15 @@ In the resulting JAR, the class file is relocated from `junit/textui/TestRunner.
 It is not necessary to specify any patterns for matching, it will operate simply on the prefix
 provided.
 
-> Relocation will be applied globally to all instance of the matched prefix.
+> Relocation will be applied globally to all instances of the matched prefix.
 That is, it does **not** scope to _only_ the dependencies being shadowed.
 Be specific as possible when configuring relocation as to avoid unintended relocations.
 
 ## Filtering Relocation
 
-Specific classes or files can be `included`/`excluded` from the relocation operation if necessary.
+Specific classes or files can be `included`/`excluded` from the relocation operation if necessary. Use
+[Ant Path Matcher](https://docs.spring.io/spring/docs/current/javadoc-api/org/springframework/util/AntPathMatcher.html) 
+syntax to specify matching path for your files and directories.
 
 ```groovy
 // Configuring Filtering for Relocation
@@ -46,14 +48,26 @@ shadowJar {
 }
 ```
 
+For a more advanced path matching you might want to use [Regular Expressions](https://regexr.com/) instead. Wrap the expresion in `%regex[]` before
+passing it to `include`/`exclude`.
+ 
+```groovy
+// Configuring Filtering for Relocation with Regex
+shadowJar {
+   relocate('org.foo', 'a') {
+       include '%regex[org/foo/.*Factory[0-9].*]'
+   }
+}
+```
+
 ## Automatically Relocating Dependencies
 
-Shadow ships with a task that can be used to automatically configure all packages from all dependencies to be relocated.
+Shadow is shipped with a task that can be used to automatically configure all packages from all dependencies to be relocated.
 This feature was formally shipped into a 2nd plugin (`com.github.johnrengelman.plugin-shadow`) but has been
 removed for clarity reasons in version 4.0.0.
 
 To configure automatic dependency relocation, declare a task of type `ConfigureShadowRelocation` and configure the
-`target` parameter to be the `ShadowJar` task you wish to auto configure. You will also need to declared a task
+`target` parameter to be the `ShadowJar` task you wish to auto configure. You will also need to declare a task
 dependency so the tasks execute in the correct order.
 
 ```groovy

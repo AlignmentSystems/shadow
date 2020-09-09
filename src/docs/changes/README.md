@@ -1,4 +1,25 @@
 # Change Log
+## v6.0.0 (2020-06-15)
+* Required Gradle 6.0+
+* *NEW*: Support for Gradle Metadata publication via the `shadowRuntimeElements` configuration. This is a _beta_ feature
+  the hasn't been tested extensively. Feedback is appreciated.
+* Fix Gradle 7 deprecation warnings [#530](https://github.com/johnrengelman/shadow/issues/530)
+* Fix to generated start script to correctly use `optsEnvironmentVar`[#518](https://github.com/johnrengelman/shadow/commit/7e99c02957773205c3babdd23f4bbf883330c975)
+* [Yahor Berdnikau](https://github.com/Tapchicoma) - Fix issues with Gradle API being embedded into published JAR [#527](https://github.com/johnrengelman/shadow/issues/527)
+* [Dmitry Vyazelenko](https://github.com/vyazelenko) - ASM updates to support latest Java versions [#549](https://github.com/johnrengelman/shadow/pull/549)
+* [ejjcase](https://github.com/ejjcase) - Support exposing shadowed project dependencies via POM [#543](https://github.com/johnrengelman/shadow/pull/543)
+* [Artem Chubaryan](https://github.com/Armaxis) - Performance optimizations [#535](https://github.com/johnrengelman/shadow/pull/535)
+* [Trask Stalnaker](https://github.com/trask) - Fix exclude patterns on Windows [#539](https://github.com/johnrengelman/shadow/pull/539)
+* [Artem Chubaryan](https://github.com/Armaxis) - Allow usage of true regex patterns for include/exclude by the `%regex[<pattern>]` syntax [#536](https://github.com/johnrengelman/shadow/pull/536)
+
+## v5.2.0 (2019-11-10)
+* [Inez Korczyński](https://github.com/inez) - Performance optimization when evaluating relocation paths [#507](https://github.com/johnrengelman/shadow/pull/507)
+* [Jeff Adler](https://github.com/jeffalder) - Fix remapping issues with multi release JARS [#526](https://github.com/johnrengelman/shadow/pull/526)
+* [Gary Hale](https://github.com/ghale) - Implement support for Gradle build cache [#524](https://github.com/johnrengelman/shadow/pull/524)
+* [Roberto Perez Alcolea](https://github.com/rpalcolea) - Gradle 6.x support [#517](https://github.com/johnrengelman/shadow/pull/517)
+* [Konstantin Gribov](https://github.com/grossws) - Return support for 5.0 for convention mapping [#502](https://github.com/johnrengelman/shadow/pull/502)
+* [Lai Jiang](https://github.com/jianglai) - Documentation updates on how to reconfigure `classifier` and `version` [#512](https://github.com/johnrengelman/shadow/pull/512)
+
 ## v5.1.0 (2019-06-29)
 * [Chris Rankin](https://github.com/chrisr3) - Add `ManifestAppenderTransformer` to support appending to Jar manifest [#474](https://github.com/johnrengelman/shadow/pull/474)
 * [Min-Ken Lai](https://github.com/minkenlai) - Additional escaping fixes in start script [#487](https://github.com/johnrengelman/shadow/pull/487)

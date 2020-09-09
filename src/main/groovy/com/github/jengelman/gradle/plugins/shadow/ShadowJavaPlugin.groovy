@@ -6,10 +6,14 @@ import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.artifacts.maven.Conf2ScopeMappingContainer
 import org.gradle.api.artifacts.maven.MavenPom
+import org.gradle.api.attributes.Bundling
+import org.gradle.api.attributes.LibraryElements
+import org.gradle.api.attributes.Category
+import org.gradle.api.attributes.Usage
+import org.gradle.api.attributes.java.TargetJvmVersion
 import org.gradle.api.plugins.JavaPluginConvention
 import org.gradle.api.plugins.MavenPlugin
 import org.gradle.api.tasks.Upload
-import org.gradle.api.tasks.compile.AbstractCompile
 import org.gradle.configuration.project.ProjectConfigurationActionContainer
 import org.gradle.util.GradleVersion
 
@@ -34,6 +38,28 @@ class ShadowJavaPlugin implements Plugin<Project> {
 
         project.configurations.compileClasspath.extendsFrom project.configurations.shadow
 
+        project.configurations {
+            shadowRuntimeElements {
+                canBeConsumed = true
+                canBeResolved = false
+                attributes {
+                    it.attribute(Usage.USAGE_ATTRIBUTE, project.objects.named(Usage, Usage.JAVA_RUNTIME))
+                    it.attribute(Category.CATEGORY_ATTRIBUTE, project.objects.named(Category, Category.LIBRARY))
+                    it.attribute(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE, project.objects.named(LibraryElements, LibraryElements.JAR))
+                    it.attribute(Bundling.BUNDLING_ATTRIBUTE, project.objects.named(Bundling, Bundling.SHADOWED))
+                }
+                outgoing.artifact(project.tasks.getByName(SHADOW_JAR_TASK_NAME))
+            }
+        }
+
+        project.configurations.shadowRuntimeElements.extendsFrom project.configurations.shadow
+
+        project.components.java {
+            addVariantsFromConfiguration(project.configurations.shadowRuntimeElements) {
+                mapToOptional() // make it a Maven optional dependency
+            }
+        }
+
     }
 
     protected void configureShadowTask(Project project) {
@@ -41,13 +67,14 @@ class ShadowJavaPlugin implements Plugin<Project> {
         ShadowJar shadow = project.tasks.create(SHADOW_JAR_TASK_NAME, ShadowJar)
         shadow.group = SHADOW_GROUP
         shadow.description = 'Create a combined JAR of project and runtime dependencies'
-        shadow.conventionMapping.with {
-            map('classifier') {
-                'all'
-            }
-        }
         if (GradleVersion.current() >= GradleVersion.version("5.1")) {
             shadow.archiveClassifier.set("all")
+        } else {
+            shadow.conventionMapping.with {
+                map('classifier') {
+                    'all'
+                }
+            }
         }
         shadow.manifest.inheritFrom project.tasks.jar.manifest
         shadow.doFirst {

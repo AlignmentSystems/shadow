@@ -20,6 +20,7 @@
 package com.github.jengelman.gradle.plugins.shadow.relocation
 
 import org.codehaus.plexus.util.SelectorUtils
+import org.gradle.api.tasks.Input
 
 import java.util.regex.Pattern
 
@@ -30,6 +31,7 @@ import java.util.regex.Pattern
  * @author Mauro Talevi
  * @author John Engelman
  */
+@CacheableRelocator
 class SimpleRelocator implements Relocator {
 
     private final String pattern
@@ -43,7 +45,7 @@ class SimpleRelocator implements Relocator {
     private final Set<String> includes
 
     private final Set<String> excludes
-
+    
     private final boolean rawString
 
     SimpleRelocator() {
@@ -103,6 +105,11 @@ class SimpleRelocator implements Relocator {
             normalized = new LinkedHashSet<String>()
 
             for (String pattern : patterns) {
+                // Regex patterns don't need to be normalized and stay as is
+                if (pattern.startsWith(SelectorUtils.REGEX_HANDLER_PREFIX)) {
+                    normalized.add(pattern)
+                    continue
+                }
 
                 String classPattern = pattern.replace('.', '/')
 
@@ -121,7 +128,7 @@ class SimpleRelocator implements Relocator {
     private boolean isIncluded(String path) {
         if (includes != null && !includes.isEmpty()) {
             for (String include : includes) {
-                if (SelectorUtils.matchPath(include, path, true)) {
+                if (SelectorUtils.matchPath(include, path, '/', true)) {
                     return true
                 }
             }
@@ -133,7 +140,7 @@ class SimpleRelocator implements Relocator {
     private boolean isExcluded(String path) {
         if (excludes != null && !excludes.isEmpty()) {
             for (String exclude : excludes) {
-                if (SelectorUtils.matchPath(exclude, path, true)) {
+                if (SelectorUtils.matchPath(exclude, path, '/', true)) {
                     return true
                 }
             }
@@ -141,28 +148,37 @@ class SimpleRelocator implements Relocator {
         return false
     }
 
-    boolean canRelocatePath(RelocatePathContext context) {
-        String path = context.path
+    boolean canRelocatePath(String path) {
         if (rawString) {
             return Pattern.compile(pathPattern).matcher(path).find()
         }
 
-        if (path.endsWith(".class")) {
-            path = path.substring(0, path.length() - 6)
-        }
-
-        if (!isIncluded(path) || isExcluded(path)) {
+        // If string is too short - no need to perform expensive string operations
+        if (path.length() < pathPattern.length()) {
             return false
         }
 
+        if (path.endsWith(".class")) {
+            // Safeguard against strings containing only ".class"
+            if (path.length() == 6) {
+                return false
+            }
+            path = path.substring(0, path.length() - 6)
+        }
+
         // Allow for annoying option of an extra / on the front of a path. See MSHADE-119 comes from getClass().getResource("/a/b/c.properties").
-        return path.startsWith(pathPattern) || path.startsWith("/" + pathPattern)
+        boolean pathStartsWithPattern =
+                path.charAt(0) == '/' ? path.startsWith(pathPattern, 1) : path.startsWith(pathPattern)
+        if (pathStartsWithPattern) {
+            return isIncluded(path) && !isExcluded(path)
+        }
+        return false
     }
 
-    boolean canRelocateClass(RelocateClassContext context) {
-        String clazz = context.className
-        RelocatePathContext pathContext = RelocatePathContext.builder().path(clazz.replace('.', '/')).stats(context.stats).build()
-        return !rawString && clazz.indexOf('/') < 0 && canRelocatePath(pathContext)
+    boolean canRelocateClass(String className) {
+        return !rawString &&
+                className.indexOf('/') < 0 &&
+                canRelocatePath(className.replace('.', '/'))
     }
 
     String relocatePath(RelocatePathContext context) {
@@ -187,5 +203,40 @@ class SimpleRelocator implements Relocator {
         } else {
             return sourceContent.replaceAll("\\b" + pattern, shadedPattern)
         }
+    }
+
+    @Input
+    String getPattern() {
+        return pattern
+    }
+
+    @Input
+    String getPathPattern() {
+        return pathPattern
+    }
+
+    @Input
+    String getShadedPattern() {
+        return shadedPattern
+    }
+
+    @Input
+    String getShadedPathPattern() {
+        return shadedPathPattern
+    }
+
+    @Input
+    Set<String> getIncludes() {
+        return includes
+    }
+
+    @Input
+    Set<String> getExcludes() {
+        return excludes
+    }
+
+    @Input
+    boolean getRawString() {
+        return rawString
     }
 }
